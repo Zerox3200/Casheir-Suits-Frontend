@@ -1,0 +1,33 @@
+---
+description: Suits Cashier frontend project context and stack
+alwaysApply: true
+---
+
+# Suits Cashier Frontend
+
+Arabic RTL cashier app for a suits shop (محل البدل). UI copy and validation messages are in Arabic by default.
+
+## Stack
+
+- React 18 + Vite
+- Tailwind CSS + Sass helpers
+- React Router (`createBrowserRouter`)
+- Formik + Yup for forms
+- React Query (`react-query` v3) for **all** API server state
+- Axios (`src/helpers/Api.js` → `api` / `BaseUrl`) as the HTTP client under React Query
+- react-toastify, react-icons, framer-motion, flowbite-react
+
+## Folder layout
+
+- `src/pages/Auth/` — login and auth screens
+- `src/pages/Admin/` — admin screens (users, etc.)
+- `src/pages/user/` — cashier/shop-owner screens
+- `src/helpers/` — API base URL, toasts, shared utils
+- `src/hooks/` — shared React Query hooks for API reads/writes
+
+## Conventions
+
+- Prefer `className` over `class`
+- Functional components + default exports
+- Keep pages under their role folder (`Auth`, `Admin`, `user`)
+- Do not invent English-first UI unless the user asks

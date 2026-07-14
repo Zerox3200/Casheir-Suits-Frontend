@@ -1,0 +1,57 @@
+---
+description: Use React Query for all API data fetching and mutations
+alwaysApply: true
+---
+
+# React Query for API management
+
+All server state must go through **React Query** (`react-query` v3). Do not fetch or mutate APIs with raw `useEffect` + Axios, ad-hoc `async` handlers that own loading/error state, or local `useState` as the source of truth for remote data.
+
+## Stack
+
+- Package: `react-query` (v3) — `QueryClient`, `QueryClientProvider`, `useQuery`, `useMutation`, `useQueryClient`
+- HTTP client: Axios instance from `src/helpers/Api.js` (`api` default export / `BaseUrl`)
+- Wrap the app with `QueryClientProvider` in `src/main.jsx` (keep it enabled)
+
+## Rules
+
+- **Reads** → `useQuery` (or `useInfiniteQuery` when paginating)
+- **Writes** (create / update / delete) → `useMutation`
+- Put `queryFn` / `mutationFn` on the Axios `api` helper — never `fetch` directly for backend calls
+- Stable, descriptive `queryKey` arrays (e.g. `['users']`, `['products', id]`)
+- After successful mutations, invalidate or update related queries via `queryClient.invalidateQueries`
+- Prefer shared hooks under `src/hooks/` (or next to the feature) instead of inlining the same query in many pages
+- Loading / error / success UI must use React Query status (`isLoading`, `isError`, `isSuccess`, `error`) — not parallel hand-rolled flags for the same request
+- Show user-facing errors with Arabic toast/copy (react-toastify) when appropriate
+
+## Patterns
+
+```jsx
+// ✅ GOOD — read
+const { data, isLoading, isError } = useQuery(['users'], async () => {
+  const { data } = await api.get('/users')
+  return data
+})
+
+// ✅ GOOD — write + invalidate
+const queryClient = useQueryClient()
+const mutation = useMutation(
+  (payload) => api.post('/users', payload),
+  {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['users'])
+    },
+  }
+)
+
+// ❌ BAD — manual fetch as source of truth
+useEffect(() => {
+  api.get('/users').then((res) => setUsers(res.data))
+}, [])
+```
+
+## Do not
+
+- Call Axios in components without wrapping in `useQuery` / `useMutation`
+- Duplicate loading/error state that React Query already provides
+- Skip `QueryClientProvider` when adding new entry points

@@ -1,0 +1,38 @@
+---
+alwaysApply: true
+---
+
+# Forms (Formik + Yup)
+
+Use `useFormik` with a Yup `validationSchema`. Show errors only when `touched && errors`.
+
+```jsx
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
+
+const schema = Yup.object({
+  email: Yup.string()
+    .email('البريد الإلكتروني غير صالح')
+    .required('البريد الإلكتروني مطلوب'),
+  password: Yup.string()
+    .min(6, 'كلمة المرور يجب ألا تقل عن ٦ أحرف')
+    .required('كلمة المرور مطلوبة'),
+})
+
+const formik = useFormik({
+  initialValues: { email: '', password: '' },
+  validationSchema: schema,
+  onSubmit: (values) => { /* API call */ },
+})
+
+<input {...formik.getFieldProps('email')} />
+<form onSubmit={formik.handleSubmit} noValidate>
+```
+
+## Rules
+
+- Arabic Yup messages always
+- Unique `id` + matching `htmlFor` on labels
+- `autoComplete` on auth fields
+- Disable submit while `formik.isSubmitting`
+- Wire submit to Axios via `BaseUrl` from `src/helpers/Api.js` — do not leave `console.log` in final code

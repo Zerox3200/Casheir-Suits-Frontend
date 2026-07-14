@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+
+# Arabic RTL UI
+
+- Root / page containers: `dir="rtl"` and `lang="ar"` when the screen is Arabic
+- Font: Cairo (`font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif`)
+- All labels, buttons, placeholders, empty states, and errors in Arabic
+- Mirror spacing utilities for RTL (e.g. icons: `right-3`, password toggle: `left-3`)
+- Brand tone: navy `#1e2a38` + gold `#9e7e3a` for suits-shop feel; avoid purple/indigo defaults
+
+```jsx
+// ✅ GOOD
+<label htmlFor="email">البريد الإلكتروني</label>
+
+// ❌ BAD
+<label htmlFor="email">Email</label>
+```
