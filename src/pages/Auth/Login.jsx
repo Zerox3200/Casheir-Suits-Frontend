@@ -1,19 +1,26 @@
 import React, { useState } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi'
+import { loginService } from '../../services/auth.services'
+import { getAuthToken, getAuthUser } from '../../helpers/cookies'
+import { getHomePathForRole } from '../../helpers/roles'
+import { appToast } from '../../helpers/toast'
 
 const loginSchema = Yup.object({
   email: Yup.string()
     .email('البريد الإلكتروني غير صالح')
     .required('البريد الإلكتروني مطلوب'),
   password: Yup.string()
-    .min(6, 'كلمة المرور يجب ألا تقل عن ٦ أحرف')
+    .min(9, 'كلمة المرور يجب ألا تقل عن ٩ أحرف')
     .required('كلمة المرور مطلوبة'),
 })
 
 export default function Login() {
+  const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
+  const isLoggedIn = Boolean(getAuthToken() && getAuthUser())
 
   const formik = useFormik({
     initialValues: {
@@ -21,10 +28,24 @@ export default function Login() {
       password: '',
     },
     validationSchema: loginSchema,
-    onSubmit: (values) => {
-      console.log(values)
+    onSubmit: async (values, { setSubmitting }) => {
+      const result = await loginService(values.email, values.password)
+      setSubmitting(false)
+
+      if (!result.success) {
+        appToast.error(result.message)
+        return
+      }
+
+      appToast.success(result.message || 'تم تسجيل الدخول بنجاح')
+      const role = result.data?.user?.role || getAuthUser()?.role
+      navigate(getHomePathForRole(role), { replace: true })
     },
   })
+
+  if (isLoggedIn) {
+    return <Navigate to={getHomePathForRole(getAuthUser()?.role)} replace />
+  }
 
   const fieldError = (name) =>
     formik.touched[name] && formik.errors[name] ? (
@@ -88,11 +109,10 @@ export default function Login() {
                 type="email"
                 autoComplete="email"
                 placeholder="example@suits.com"
-                className={`w-full rounded-lg border bg-[#f7f5f2] py-2.5 pr-10 pl-3 text-sm text-[#1e2a38] outline-none transition placeholder:text-[#a0a8b0] focus:border-[#9e7e3a]/60 focus:ring-1 focus:ring-[#9e7e3a]/25 ${
-                  formik.touched.email && formik.errors.email
+                className={`w-full rounded-lg border bg-[#f7f5f2] py-2.5 pr-10 pl-3 text-sm text-[#1e2a38] outline-none transition placeholder:text-[#a0a8b0] focus:border-[#9e7e3a]/60 focus:ring-1 focus:ring-[#9e7e3a]/25 ${formik.touched.email && formik.errors.email
                     ? 'border-red-400'
                     : 'border-[#1e2a38]/10'
-                }`}
+                  }`}
                 {...formik.getFieldProps('email')}
               />
             </div>
@@ -116,11 +136,10 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className={`w-full rounded-lg border bg-[#f7f5f2] py-2.5 pr-10 pl-10 text-sm text-[#1e2a38] outline-none transition placeholder:text-[#a0a8b0] focus:border-[#9e7e3a]/60 focus:ring-1 focus:ring-[#9e7e3a]/25 ${
-                  formik.touched.password && formik.errors.password
+                className={`w-full rounded-lg border bg-[#f7f5f2] py-2.5 pr-10 pl-10 text-sm text-[#1e2a38] outline-none transition placeholder:text-[#a0a8b0] focus:border-[#9e7e3a]/60 focus:ring-1 focus:ring-[#9e7e3a]/25 ${formik.touched.password && formik.errors.password
                     ? 'border-red-400'
                     : 'border-[#1e2a38]/10'
-                }`}
+                  }`}
                 {...formik.getFieldProps('password')}
               />
               <button
@@ -140,7 +159,7 @@ export default function Login() {
             disabled={formik.isSubmitting}
             className="w-full rounded-lg bg-[#1e2a38] py-2.5 text-sm font-semibold text-white transition hover:bg-[#2a3a4d] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            دخول
+            {formik.isSubmitting ? 'جاري الدخول...' : 'دخول'}
           </button>
         </form>
       </div>

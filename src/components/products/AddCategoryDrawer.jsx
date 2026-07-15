@@ -2,6 +2,8 @@ import React, { useEffect } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import LeftDrawer from './LeftDrawer'
+import { appToast } from '../../helpers/toast'
+import { useCreateCategory } from '../../hooks/useCategories'
 
 const schema = Yup.object({
   name: Yup.string().trim().required('اسم التصنيف مطلوب'),
@@ -14,6 +16,8 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm text-[#3d4654]'
 
 export default function AddCategoryDrawer({ open, onClose }) {
+  const createCategory = useCreateCategory()
+
   const formik = useFormik({
     initialValues: {
       name: '',
@@ -21,8 +25,21 @@ export default function AddCategoryDrawer({ open, onClose }) {
       isActive: true,
     },
     validationSchema: schema,
-    onSubmit: () => {
-      onClose()
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      try {
+        const result = await createCategory.mutateAsync({
+          name: values.name.trim(),
+          description: values.description || '',
+          isActive: Boolean(values.isActive),
+        })
+        appToast.success(result.message || 'تم إنشاء التصنيف بنجاح')
+        resetForm()
+        onClose()
+      } catch (error) {
+        appToast.error(error?.message || 'تعذر إنشاء التصنيف')
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -30,6 +47,8 @@ export default function AddCategoryDrawer({ open, onClose }) {
     if (!open) formik.resetForm()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  const isBusy = formik.isSubmitting || createCategory.isLoading
 
   const fieldError = (name) =>
     formik.touched[name] && formik.errors[name] ? (
@@ -81,10 +100,10 @@ export default function AddCategoryDrawer({ open, onClose }) {
 
         <button
           type="submit"
-          disabled={formik.isSubmitting}
-          className="w-full rounded-lg bg-[#1e2a38] py-2.5 text-sm font-semibold text-white transition hover:bg-[#2a3a4d] disabled:opacity-60"
+          disabled={isBusy}
+          className="w-full rounded-lg bg-[#1e2a38] py-2.5 text-sm font-semibold text-white transition hover:bg-[#2a3a4d] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          حفظ التصنيف
+          {isBusy ? 'جاري الحفظ...' : 'حفظ التصنيف'}
         </button>
       </form>
     </LeftDrawer>

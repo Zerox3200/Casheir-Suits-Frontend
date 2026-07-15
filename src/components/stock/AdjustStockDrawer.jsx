@@ -2,7 +2,9 @@ import React, { useEffect } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import LeftDrawer from '../products/LeftDrawer'
-import { STOCK_ADJUST_REASON } from '../../pages/Admin/stockMock'
+import { STOCK_ADJUST_REASON } from '../../constants/stock'
+import { useAdjustStock } from '../../hooks/useStock'
+import { appToast } from '../../helpers/toast'
 
 const schema = Yup.object({
   quantity: Yup.number()
@@ -19,6 +21,10 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm text-[#3d4654]'
 
 export default function AdjustStockDrawer({ open, onClose, stockItem }) {
+  const adjustStock = useAdjustStock()
+  const product = stockItem?.productId
+  const productId = product?._id || product || null
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -26,8 +32,25 @@ export default function AdjustStockDrawer({ open, onClose, stockItem }) {
       reason: STOCK_ADJUST_REASON.MANUAL,
     },
     validationSchema: schema,
-    onSubmit: () => {
-      onClose()
+    onSubmit: async (values, { setSubmitting }) => {
+      if (!productId) {
+        appToast.error('معرف المنتج غير متاح')
+        setSubmitting(false)
+        return
+      }
+      try {
+        const result = await adjustStock.mutateAsync({
+          productId,
+          quantity: Number(values.quantity),
+          reason: values.reason,
+        })
+        appToast.success(result.message || 'تم تعديل المخزون بنجاح')
+        onClose()
+      } catch (error) {
+        appToast.error(error?.message || 'تعذر تعديل المخزون')
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -36,17 +59,21 @@ export default function AdjustStockDrawer({ open, onClose, stockItem }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  const product = stockItem?.productId
-
   return (
     <LeftDrawer open={open} onClose={onClose} title="تعديل كمية المخزون">
       {product && (
         <div className="mb-4 rounded-xl border border-[#1e2a38]/8 bg-[#f7f5f2] p-4">
-          <p className="font-semibold text-[#1e2a38]">{product.name}</p>
-          <p className="mt-1 font-mono text-xs text-[#8a939e]">{product.sku}</p>
+          <p className="font-semibold text-[#1e2a38]">
+            {product.name || '—'}
+          </p>
+          <p className="mt-1 font-mono text-xs text-[#8a939e]">
+            {product.sku || '—'}
+          </p>
           <p className="mt-2 text-sm text-[#5c6570]">
             الكمية الحالية:{' '}
-            <span className="font-bold text-[#1e2a38]">{stockItem.quantity}</span>
+            <span className="font-bold text-[#1e2a38]">
+              {stockItem.quantity}
+            </span>
           </p>
           <p className="text-xs text-[#8a939e]">
             الحد الأدنى: {stockItem.minimumQuantity}
@@ -97,10 +124,12 @@ export default function AdjustStockDrawer({ open, onClose, stockItem }) {
 
         <button
           type="submit"
-          disabled={formik.isSubmitting}
+          disabled={formik.isSubmitting || adjustStock.isLoading}
           className="w-full rounded-lg bg-[#1e2a38] py-2.5 text-sm font-semibold text-white transition hover:bg-[#2a3a4d] disabled:opacity-60"
         >
-          حفظ التعديل
+          {formik.isSubmitting || adjustStock.isLoading
+            ? 'جاري الحفظ...'
+            : 'حفظ التعديل'}
         </button>
       </form>
     </LeftDrawer>

@@ -22,7 +22,7 @@ All server state must go through **React Query** (`react-query` v3). Do not fetc
 - After successful mutations, invalidate or update related queries via `queryClient.invalidateQueries`
 - Prefer shared hooks under `src/hooks/` (or next to the feature) instead of inlining the same query in many pages
 - Loading / error / success UI must use React Query status (`isLoading`, `isError`, `isSuccess`, `error`) — not parallel hand-rolled flags for the same request
-- Show user-facing errors with Arabic toast/copy (react-toastify) when appropriate
+- Show user-facing errors with Arabic toast/copy via `appToast` (`src/helpers/toast.js`) when appropriate
 
 ## Patterns
 

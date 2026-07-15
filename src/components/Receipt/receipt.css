@@ -1,0 +1,204 @@
+.receipt-print-root {
+  background: #e8e8e8;
+  min-height: 100dvh;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  font-family: 'Courier New', Courier, ui-monospace, monospace;
+}
+
+.receipt-print-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.receipt-paper {
+  background: #fff;
+  color: #000;
+  width: var(--receipt-width, 80mm);
+  max-width: 100%;
+  padding: 3mm 2.5mm;
+  box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  line-height: 1.35;
+  font-size: 12px;
+}
+
+.receipt-paper[data-width='58mm'] {
+  --receipt-width: 58mm;
+  font-size: 11px;
+}
+
+.receipt-paper[data-width='80mm'] {
+  --receipt-width: 80mm;
+  font-size: 12px;
+}
+
+.receipt-center {
+  text-align: center;
+}
+
+.receipt-logo {
+  display: block;
+  margin: 0 auto 4px;
+  max-height: 48px;
+  max-width: 70%;
+  object-fit: contain;
+}
+
+.receipt-store-name {
+  font-size: 1.15em;
+  font-weight: 700;
+  margin: 0;
+  text-transform: none;
+}
+
+.receipt-muted {
+  margin: 2px 0;
+  font-size: 0.92em;
+}
+
+.receipt-sep {
+  border: 0;
+  border-top: 1px dashed #000;
+  margin: 8px 0;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.receipt-row-label {
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+.receipt-row-value {
+  flex: 1 1 auto;
+  text-align: left;
+  word-break: break-word;
+}
+
+.receipt-meta .receipt-row {
+  margin: 2px 0;
+}
+
+.receipt-items-head {
+  display: grid;
+  grid-template-columns: 1fr 2.4em 4.8em 4.2em;
+  column-gap: 6px;
+  font-weight: 700;
+  border-bottom: 1px solid #000;
+  padding-bottom: 3px;
+  margin-bottom: 4px;
+  text-align: right;
+}
+
+.receipt-item {
+  margin-bottom: 6px;
+}
+
+.receipt-item-name {
+  font-weight: 600;
+  margin-bottom: 1px;
+  word-break: break-word;
+}
+
+.receipt-item-meta {
+  font-size: 0.85em;
+  opacity: 0.75;
+  margin-bottom: 1px;
+}
+
+.receipt-item-cols {
+  display: grid;
+  grid-template-columns: 1fr 2.4em 4.8em 4.2em;
+  column-gap: 6px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Extra breathing room between الكمية and السعر */
+.receipt-items-head span:nth-child(3),
+.receipt-item-cols span:nth-child(3) {
+  padding-inline-start: 8px;
+}
+
+.receipt-totals .receipt-row {
+  margin: 3px 0;
+}
+
+.receipt-total-strong {
+  font-weight: 700;
+  font-size: 1.08em;
+  border-top: 1px solid #000;
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+.receipt-footer {
+  text-align: center;
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.receipt-future-slot:empty {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: auto;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  /* Hide app chrome if receipt is ever nested in layout */
+  .no-print,
+  aside,
+  nav,
+  [data-sidebar],
+  .suits-toaster,
+  button:not(.receipt-allow-print) {
+    display: none !important;
+  }
+
+  .receipt-print-root {
+    background: transparent !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .receipt-print-actions {
+    display: none !important;
+  }
+
+  .receipt-paper {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    width: var(--receipt-width, 80mm) !important;
+    max-width: var(--receipt-width, 80mm) !important;
+    padding: 2mm !important;
+    color: #000 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

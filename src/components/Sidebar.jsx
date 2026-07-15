@@ -10,21 +10,45 @@ import {
   FiMenu,
   FiX,
   FiLogOut,
+  FiSettings,
 } from 'react-icons/fi'
-import { clearAuthCookies } from '../helpers/cookies'
+import { clearAuthSession } from '../services/auth.services'
+import { resolveMediaUrl } from '../helpers/Api'
+import { getAuthUser } from '../helpers/cookies'
+import { isAdmin } from '../helpers/roles'
+import { DEFAULT_SETTINGS, useSettings } from '../hooks/useSettings'
 
 const navLinks = [
   { to: '/products', label: 'إدارة المنتجات', icon: FiBox },
   { to: '/orders', label: 'إدارة الأوردرات', icon: FiShoppingBag },
   { to: '/invoices', label: 'إدارة الفواتير', icon: FiFileText },
   { to: '/stock', label: 'المخزن', icon: FiPackage },
-  { to: '/users', label: 'إدارة المستخدمين', icon: FiUsers },
-  { to: '/stats', label: 'إحصائيات السيستم والجرد', icon: FiBarChart2 },
+  { to: '/users', label: 'إدارة المستخدمين', icon: FiUsers, adminOnly: true },
+  {
+    to: '/stats',
+    label: 'إحصائيات السيستم والجرد',
+    icon: FiBarChart2,
+    adminOnly: true,
+  },
+  {
+    to: '/settings',
+    label: 'إعدادات المتجر',
+    icon: FiSettings,
+    adminOnly: true,
+  },
 ]
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const { data: settings } = useSettings()
+  const user = getAuthUser()
+  const admin = isAdmin(user)
+
+  const visibleLinks = navLinks.filter((link) => admin || !link.adminOnly)
+
+  const storeName = settings?.storeName?.trim() || DEFAULT_SETTINGS.storeName
+  const logoUrl = resolveMediaUrl(settings?.logo)
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
@@ -34,14 +58,14 @@ export default function Sidebar() {
     }`
 
   const handleLogout = () => {
-    clearAuthCookies()
+    clearAuthSession()
     setOpen(false)
-    navigate('/login')
+    navigate('/login', { replace: true })
   }
 
   const nav = (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-      {navLinks.map(({ to, label, icon: Icon }) => (
+      {visibleLinks.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -58,7 +82,16 @@ export default function Sidebar() {
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-[#1e2a38]/10 bg-white/90 px-4 backdrop-blur-sm lg:hidden">
-        <p className="text-sm font-bold text-[#1e2a38]">محل البدل · Suits</p>
+        <div className="flex min-w-0 items-center gap-2">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-8 w-8 shrink-0 rounded object-contain"
+            />
+          ) : null}
+          <p className="truncate text-sm font-bold text-[#1e2a38]">{storeName}</p>
+        </div>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -85,9 +118,20 @@ export default function Sidebar() {
         style={{ fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" }}
       >
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-[#1e2a38]/10 px-4 py-5">
-          <div>
-            <p className="text-xs font-semibold text-[#9e7e3a]">محل البدل</p>
-            <h1 className="text-lg font-bold text-[#1e2a38]">Suits Shop</h1>
+          <div className="flex min-w-0 items-center gap-2.5">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt=""
+                className="h-10 w-10 shrink-0 rounded-lg border border-[#1e2a38]/8 object-contain"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-[#9e7e3a]">المتجر</p>
+              <h1 className="truncate text-lg font-bold text-[#1e2a38]">
+                {storeName}
+              </h1>
+            </div>
           </div>
           <button
             type="button"
@@ -102,7 +146,15 @@ export default function Sidebar() {
         {nav}
 
         <footer className="shrink-0 space-y-3 border-t border-[#1e2a38]/10 p-4">
-          <p className="text-xs text-[#8a939e]">لوحة تحكم صاحب المحل</p>
+          {(settings?.phone || settings?.address) && (
+            <div className="space-y-0.5 text-[11px] leading-relaxed text-[#8a939e]">
+              {settings.phone ? <p>{settings.phone}</p> : null}
+              {settings.address ? <p className="line-clamp-2">{settings.address}</p> : null}
+            </div>
+          )}
+          <p className="text-xs text-[#8a939e]">
+            {admin ? 'لوحة تحكم المسؤول' : 'لوحة الكاشير'}
+          </p>
           <button
             type="button"
             onClick={handleLogout}

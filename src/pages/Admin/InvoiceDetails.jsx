@@ -1,18 +1,11 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FiArrowRight, FiFileText, FiRotateCcw } from 'react-icons/fi'
-import {
-  getMockInvoiceById,
-  INVOICE_STATUS,
-  PAYMENT_METHODS,
-} from './invoicesMock'
+import { FiArrowRight, FiFileText, FiPrinter, FiRotateCcw } from 'react-icons/fi'
+import { INVOICE_STATUS, PAYMENT_METHODS } from '../../constants/invoices'
+import { useInvoice } from '../../hooks/useInvoices'
+import { useFormatMoney } from '../../hooks/useSettings'
 import ReturnInvoiceDrawer from '../../components/invoices/ReturnInvoiceDrawer'
-
-const formatMoney = (value) =>
-  new Intl.NumberFormat('ar-EG', {
-    style: 'decimal',
-    maximumFractionDigits: 0,
-  }).format(value ?? 0)
+import ScrollableTable, { stickyTheadClass } from '../../components/ScrollableTable'
 
 const formatDate = (value) => {
   if (!value) return '—'
@@ -34,23 +27,42 @@ function DetailItem({ label, children }) {
 export default function InvoiceDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const invoice = getMockInvoiceById(id)
   const [returnOpen, setReturnOpen] = useState(false)
+  const { formatMoney } = useFormatMoney()
 
-  if (!invoice) {
+  const { data: invoice, isLoading, isError, error, refetch } = useInvoice(id)
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-[#1e2a38]/8 bg-white p-8 text-center shadow-sm">
+        <p className="text-sm text-[#5c6570]">جاري تحميل الفاتورة...</p>
+      </div>
+    )
+  }
+
+  if (isError || !invoice) {
     return (
       <div className="rounded-2xl border border-[#1e2a38]/8 bg-white p-8 text-center shadow-sm">
         <p className="text-lg font-bold text-[#1e2a38]">الفاتورة غير موجودة</p>
         <p className="mt-2 text-sm text-[#5c6570]">
-          لم يتم العثور على فاتورة بهذا المعرّف
+          {error?.message || 'لم يتم العثور على فاتورة بهذا المعرّف'}
         </p>
-        <Link
-          to="/invoices"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#9e7e3a] hover:underline"
-        >
-          <FiArrowRight size={16} />
-          العودة للفواتير
-        </Link>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="rounded-lg bg-[#1e2a38] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[#2a3a4d]"
+          >
+            إعادة المحاولة
+          </button>
+          <Link
+            to="/invoices"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#9e7e3a] hover:underline"
+          >
+            <FiArrowRight size={16} />
+            العودة للفواتير
+          </Link>
+        </div>
       </div>
     )
   }
@@ -86,16 +98,25 @@ export default function InvoiceDetails() {
           </p>
         </div>
 
-        {invoice.status === INVOICE_STATUS.COMPLETED && (
-          <button
-            type="button"
-            onClick={() => setReturnOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to={`/invoices/${id}/receipt`}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1e2a38]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#1e2a38] transition hover:bg-[#f7f5f2]"
           >
-            <FiRotateCcw size={16} />
-            إرجاع الفاتورة
-          </button>
-        )}
+            <FiPrinter size={16} />
+            طباعة الإيصال
+          </Link>
+          {invoice.status === INVOICE_STATUS.COMPLETED && (
+            <button
+              type="button"
+              onClick={() => setReturnOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            >
+              <FiRotateCcw size={16} />
+              إرجاع الفاتورة
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -131,9 +152,9 @@ export default function InvoiceDetails() {
           <FiFileText size={16} className="text-[#1e2a38]" />
           <h2 className="text-sm font-bold text-[#1e2a38]">عناصر الفاتورة</h2>
         </div>
-        <div className="overflow-x-auto">
+        <ScrollableTable>
           <table className="w-full min-w-[700px] text-right text-sm">
-            <thead className="bg-[#f7f5f2] text-xs text-[#5c6570]">
+            <thead className={stickyTheadClass}>
               <tr>
                 <th className="px-4 py-3 font-semibold">المنتج</th>
                 <th className="px-4 py-3 font-semibold">SKU</th>
@@ -144,7 +165,7 @@ export default function InvoiceDetails() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1e2a38]/6">
-              {invoice.items.map((item, idx) => (
+              {(invoice.items ?? []).map((item, idx) => (
                 <tr key={`${item.productId}-${idx}`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-[#1e2a38]">{item.name}</p>
@@ -169,7 +190,7 @@ export default function InvoiceDetails() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollableTable>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -210,7 +231,7 @@ export default function InvoiceDetails() {
             </div>
             <div className="mt-3 flex justify-between border-t border-white/15 pt-3 text-lg font-bold">
               <span>الإجمالي</span>
-              <span>{formatMoney(invoice.total)} ج.م</span>
+              <span>{formatMoney(invoice.total)}</span>
             </div>
           </div>
         </aside>

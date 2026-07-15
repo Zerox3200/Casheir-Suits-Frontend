@@ -11,7 +11,7 @@ alwaysApply: false
 - Auth routes stay outside `MainLayOut` when they need a standalone full-screen (e.g. `/login`)
 - Admin pages live in `src/pages/Admin/` and get their own protected routes when auth is added
 - Prefer Tailwind utility classes; use Sass in `src/helpers` only for shared mixins/helpers
-- Reuse `ToastOptions` + `ToastContainer` for success/error feedback
+- Use `appToast` from `src/helpers/toast.js` for feedback (`SuitsToaster` in `main.jsx`)
 
 ```jsx
 // App.jsx route shape

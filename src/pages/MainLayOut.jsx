@@ -1,13 +1,17 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
+import { useSettings } from '../hooks/useSettings'
 
 export default function MainLayOut() {
+  // Prefetch store settings for sidebar, currency, POS tax, receipts, etc.
+  useSettings()
+
   return (
     <div
       dir="rtl"
       lang="ar"
-      className="flex h-dvh overflow-hidden bg-[#f7f5f2]"
+      className="flex h-dvh overflow-hidden bg-[#f7f5f2] print:hidden"
       style={{ fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" }}
     >
       <Sidebar />

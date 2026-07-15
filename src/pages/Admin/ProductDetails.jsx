@@ -1,18 +1,12 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { FiArrowRight, FiBox, FiEdit2 } from 'react-icons/fi'
-import {
-  getMockProductById,
-  mockCategories,
-  mockSuppliers,
-} from './productsMock'
+import { resolveMediaUrl } from '../../helpers/Api'
+import { useCategories } from '../../hooks/useCategories'
+import { useProduct } from '../../hooks/useProducts'
+import { useSuppliers } from '../../hooks/useSuppliers'
 import AddProductDrawer from '../../components/products/AddProductDrawer'
-
-const formatMoney = (value) =>
-  new Intl.NumberFormat('ar-EG', {
-    style: 'decimal',
-    maximumFractionDigits: 0,
-  }).format(value ?? 0)
+import { useFormatMoney } from '../../hooks/useSettings'
 
 const formatDate = (value) => {
   if (!value) return '—'
@@ -34,23 +28,57 @@ function DetailItem({ label, children }) {
 export default function ProductDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const product = getMockProductById(id)
   const [editOpen, setEditOpen] = useState(false)
+  const { formatMoney } = useFormatMoney()
 
-  if (!product) {
+  const { data, isLoading, isError, error, refetch } = useProduct(id)
+  const { data: categoriesData } = useCategories({ limit: 100 })
+  const { data: suppliersData } = useSuppliers({ limit: 100 })
+
+  const product = data?.product
+  const stock = data?.stock
+  const categories = categoriesData?.items ?? []
+  const suppliers = suppliersData?.items ?? []
+
+  const editProduct = useMemo(
+    () => (product ? { ...product, stock } : null),
+    [product, stock]
+  )
+  const imageSrc = resolveMediaUrl(product?.image)
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-[#1e2a38]/8 bg-white p-8 text-center shadow-sm">
+        <p className="text-sm text-[#5c6570]">جاري تحميل تفاصيل المنتج...</p>
+      </div>
+    )
+  }
+
+  if (isError || !product) {
     return (
       <div className="rounded-2xl border border-[#1e2a38]/8 bg-white p-8 text-center shadow-sm">
         <p className="text-lg font-bold text-[#1e2a38]">المنتج غير موجود</p>
         <p className="mt-2 text-sm text-[#5c6570]">
-          لم يتم العثور على منتج بهذا المعرّف
+          {error?.message || 'لم يتم العثور على منتج بهذا المعرّف'}
         </p>
-        <Link
-          to="/products"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#9e7e3a] hover:underline"
-        >
-          <FiArrowRight size={16} />
-          العودة للمنتجات
-        </Link>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          {isError && (
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-lg bg-[#1e2a38] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[#2a3a4d]"
+            >
+              إعادة المحاولة
+            </button>
+          )}
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#9e7e3a] hover:underline"
+          >
+            <FiArrowRight size={16} />
+            العودة للمنتجات
+          </Link>
+        </div>
       </div>
     )
   }
@@ -85,9 +113,9 @@ export default function ProductDetails() {
 
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <section className="flex flex-col items-center justify-center rounded-2xl border border-[#1e2a38]/8 bg-white p-6 shadow-sm">
-          {product.image ? (
+          {imageSrc ? (
             <img
-              src={product.image}
+              src={imageSrc}
               alt={product.name}
               className="h-56 w-full rounded-xl object-cover"
             />
@@ -128,13 +156,16 @@ export default function ProductDetails() {
               {product.supplierId?.phone || '—'}
             </DetailItem>
             <DetailItem label="سعر التكلفة">
-              {formatMoney(product.costPrice)} ج.م
+              {formatMoney(product.costPrice)}
             </DetailItem>
             <DetailItem label="سعر البيع">
-              {formatMoney(product.sellingPrice)} ج.م
+              {formatMoney(product.sellingPrice)}
+            </DetailItem>
+            <DetailItem label="كمية المخزون">
+              {stock?.quantity ?? '—'}
             </DetailItem>
             <DetailItem label="الحد الأدنى للمخزون">
-              {product.minimumQuantity ?? '—'}
+              {stock?.minimumQuantity ?? '—'}
             </DetailItem>
             <DetailItem label="تاريخ الإنشاء">
               {formatDate(product.createdAt)}
@@ -154,9 +185,9 @@ export default function ProductDetails() {
       <AddProductDrawer
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        categories={mockCategories}
-        suppliers={mockSuppliers}
-        product={product}
+        categories={categories}
+        suppliers={suppliers}
+        product={editProduct}
       />
     </div>
   )

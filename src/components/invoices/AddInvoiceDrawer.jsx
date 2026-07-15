@@ -3,7 +3,10 @@ import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { FiPlus, FiTrash2 } from 'react-icons/fi'
 import LeftDrawer from '../products/LeftDrawer'
-import { PAYMENT_METHODS } from '../../pages/Admin/invoicesMock'
+import { PAYMENT_METHODS } from '../../constants/invoices'
+import { useCreateInvoice } from '../../hooks/useInvoices'
+import { useFormatMoney, useSettings } from '../../hooks/useSettings'
+import { appToast } from '../../helpers/toast'
 
 const schema = Yup.object({
   customerName: Yup.string(),
@@ -40,31 +43,65 @@ const inputClass =
   'w-full rounded-lg border border-[#1e2a38]/10 bg-[#f7f5f2] px-3 py-2.5 text-sm text-[#1e2a38] outline-none transition focus:border-[#9e7e3a]/60 focus:ring-1 focus:ring-[#9e7e3a]/25'
 const labelClass = 'mb-1.5 block text-sm text-[#3d4654]'
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat('ar-EG', {
-    style: 'decimal',
-    maximumFractionDigits: 0,
-  }).format(value || 0)
+export default function AddInvoiceDrawer({ open, onClose, products = [] }) {
+  const createInvoice = useCreateInvoice()
+  const { formatMoney } = useFormatMoney()
+  const { data: settings } = useSettings()
 
-export default function AddInvoiceDrawer({ open, onClose, products }) {
   const formik = useFormik({
     initialValues: {
       customerName: '',
       customerPhone: '',
       items: [{ productId: '', quantity: 1 }],
       discount: 0,
-      tax: 0,
+      tax: Number(settings?.defaultTax) || 0,
       paymentMethod: PAYMENT_METHODS.CASH,
       notes: '',
     },
     validationSchema: schema,
-    onSubmit: () => {
-      onClose()
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      try {
+        const result = await createInvoice.mutateAsync({
+          customerName: values.customerName.trim(),
+          customerPhone: values.customerPhone.trim(),
+          items: values.items.map((item) => ({
+            productId: item.productId,
+            quantity: Number(item.quantity),
+          })),
+          discount: Number(values.discount) || 0,
+          tax: Number(values.tax) || 0,
+          paymentMethod: values.paymentMethod,
+          notes: values.notes.trim(),
+        })
+        const number = result.data?.invoice?.invoiceNumber
+        appToast.success(
+          number
+            ? `تم إنشاء الفاتورة ${number}`
+            : result.message || 'تم إنشاء الفاتورة بنجاح'
+        )
+        resetForm()
+        onClose()
+      } catch (error) {
+        appToast.error(error?.message || 'تعذر إنشاء الفاتورة')
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
   useEffect(() => {
-    if (!open) formik.resetForm()
+    if (!open) return
+    formik.resetForm({
+      values: {
+        customerName: '',
+        customerPhone: '',
+        items: [{ productId: '', quantity: 1 }],
+        discount: 0,
+        tax: Number(settings?.defaultTax) || 0,
+        paymentMethod: PAYMENT_METHODS.CASH,
+        notes: '',
+      },
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -189,10 +226,10 @@ export default function AddInvoiceDrawer({ open, onClose, products }) {
                     >
                       <option value="">اختر المنتج</option>
                       {products
-                        .filter((p) => p.isActive)
+                        .filter((p) => p.isActive !== false)
                         .map((p) => (
                           <option key={p._id} value={p._id}>
-                            {p.name} — {formatMoney(p.sellingPrice)} ج.م
+                            {p.name} — {formatMoney(p.sellingPrice)}
                           </option>
                         ))}
                     </select>
@@ -304,16 +341,18 @@ export default function AddInvoiceDrawer({ open, onClose, products }) {
           </div>
           <div className="mt-3 flex justify-between border-t border-white/15 pt-3 text-base font-bold">
             <span>الإجمالي</span>
-            <span>{formatMoney(total)} ج.م</span>
+            <span>{formatMoney(total)}</span>
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={formik.isSubmitting}
+          disabled={formik.isSubmitting || createInvoice.isLoading}
           className="w-full rounded-lg bg-[#9e7e3a] py-2.5 text-sm font-semibold text-white transition hover:bg-[#b08f4a] disabled:opacity-60"
         >
-          إنشاء الفاتورة
+          {formik.isSubmitting || createInvoice.isLoading
+            ? 'جاري الإنشاء...'
+            : 'إنشاء الفاتورة'}
         </button>
       </form>
     </LeftDrawer>

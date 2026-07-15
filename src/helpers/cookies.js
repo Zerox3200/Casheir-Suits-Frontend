@@ -1,79 +1,50 @@
-import Cookies from 'universal-cookie'
-
 export const TOKEN_COOKIE_KEY = 'SuitsCashier_token'
 export const USER_COOKIE_KEY = 'SuitsCashier_user'
 
 const SEVEN_DAYS_SEC = 7 * 24 * 60 * 60
-const ONE_DAY_SEC = 24 * 60 * 60
 
-const cookies = new Cookies(null, { path: '/' })
-const authSessionListeners = new Set()
-let authSessionVersion = 0
-
-function baseOptions(maxAge) {
-    return {
-        path: '/',
-        sameSite: 'lax',
-        secure: import.meta.env.PROD,
-        ...(maxAge != null ? { maxAge } : {}),
-    }
+function getCookie(name) {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1')}=([^;]*)`)
+  )
+  return match ? decodeURIComponent(match[1]) : null
 }
 
-export function subscribeAuthSession(listener) {
-    authSessionListeners.add(listener)
-    return () => authSessionListeners.delete(listener)
+function setCookie(name, value, maxAgeSec) {
+  if (typeof document === 'undefined') return
+  const secure = import.meta.env.PROD ? '; Secure' : ''
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSec}; SameSite=Lax${secure}`
 }
 
-export function getAuthSessionVersion() {
-    return authSessionVersion
-}
-
-function notifyAuthSessionChange() {
-    authSessionVersion += 1
-    authSessionListeners.forEach((listener) => listener())
+function removeCookie(name) {
+  if (typeof document === 'undefined') return
+  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`
 }
 
 export function getAuthToken() {
-    return cookies.get(TOKEN_COOKIE_KEY) ?? null
+  return getCookie(TOKEN_COOKIE_KEY)
 }
 
 export function getAuthUser() {
-    const raw = cookies.get(USER_COOKIE_KEY)
-    if (!raw) return null
-    if (typeof raw === 'object') return raw
-    try {
-        return JSON.parse(raw)
-    } catch {
-        return null
-    }
+  const raw = getCookie(USER_COOKIE_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
 }
-
-export function getAuthSessionSnapshot() {
-    return {
-        token: getAuthToken(),
-        user: getAuthUser(),
-    }
-}
-
-
 
 export function setAuthToken(token) {
-    cookies.set(TOKEN_COOKIE_KEY, token, baseOptions(SEVEN_DAYS_SEC))
-    notifyAuthSessionChange()
+  setCookie(TOKEN_COOKIE_KEY, token, SEVEN_DAYS_SEC)
 }
 
 export function setAuthUser(user) {
-    cookies.set(USER_COOKIE_KEY, JSON.stringify(user), baseOptions(SEVEN_DAYS_SEC))
-    notifyAuthSessionChange()
+  setCookie(USER_COOKIE_KEY, JSON.stringify(user), SEVEN_DAYS_SEC)
 }
-
 
 export function clearAuthCookies() {
-    const opts = { path: '/' }
-    cookies.remove(TOKEN_COOKIE_KEY, opts)
-    cookies.remove(USER_COOKIE_KEY, opts)
-    notifyAuthSessionChange()
+  removeCookie(TOKEN_COOKIE_KEY)
+  removeCookie(USER_COOKIE_KEY)
 }
-
-/** Re-export for react-cookie hooks in components */
-export { cookies }

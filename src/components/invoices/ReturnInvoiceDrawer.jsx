@@ -2,6 +2,8 @@ import React, { useEffect } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import LeftDrawer from '../products/LeftDrawer'
+import { useReturnInvoice } from '../../hooks/useInvoices'
+import { appToast } from '../../helpers/toast'
 
 const schema = Yup.object({
   returnReason: Yup.string().trim().required('سبب الإرجاع مطلوب'),
@@ -12,11 +14,30 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm text-[#3d4654]'
 
 export default function ReturnInvoiceDrawer({ open, onClose, invoice }) {
+  const returnInvoice = useReturnInvoice()
+
   const formik = useFormik({
     initialValues: { returnReason: '' },
     validationSchema: schema,
-    onSubmit: () => {
-      onClose()
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      if (!invoice?._id) {
+        appToast.error('معرّف الفاتورة غير متاح')
+        setSubmitting(false)
+        return
+      }
+      try {
+        const result = await returnInvoice.mutateAsync({
+          id: invoice._id,
+          returnReason: values.returnReason.trim(),
+        })
+        appToast.success(result.message || 'تم إرجاع الفاتورة بنجاح')
+        resetForm()
+        onClose()
+      } catch (error) {
+        appToast.error(error?.message || 'تعذر إرجاع الفاتورة')
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -59,10 +80,12 @@ export default function ReturnInvoiceDrawer({ open, onClose, invoice }) {
 
         <button
           type="submit"
-          disabled={formik.isSubmitting}
+          disabled={formik.isSubmitting || returnInvoice.isLoading}
           className="w-full rounded-lg bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
         >
-          تأكيد الإرجاع
+          {formik.isSubmitting || returnInvoice.isLoading
+            ? 'جاري الإرجاع...'
+            : 'تأكيد الإرجاع'}
         </button>
       </form>
     </LeftDrawer>

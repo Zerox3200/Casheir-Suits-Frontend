@@ -15,7 +15,7 @@ Arabic RTL cashier app for a suits shop (محل البدل). UI copy and validat
 - Formik + Yup for forms
 - React Query (`react-query` v3) for **all** API server state
 - Axios (`src/helpers/Api.js` → `api` / `BaseUrl`) as the HTTP client under React Query
-- react-toastify, react-icons, framer-motion, flowbite-react
+- react-hot-toast (via `appToast` / `SuitsToaster`), react-icons, framer-motion, flowbite-react
 
 ## Folder layout
 

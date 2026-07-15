@@ -3,7 +3,9 @@ import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
 import LeftDrawer from '../products/LeftDrawer'
-import { ROLES } from '../../pages/Admin/usersMock'
+import { ROLES } from '../../constants/roles'
+import { useCreateUser } from '../../hooks/useUsers'
+import { appToast } from '../../helpers/toast'
 
 const schema = Yup.object({
   name: Yup.string()
@@ -33,6 +35,7 @@ const labelClass = 'mb-1.5 block text-sm text-[#3d4654]'
 export default function AddUserDrawer({ open, onClose }) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const createUser = useCreateUser()
 
   const formik = useFormik({
     initialValues: {
@@ -44,8 +47,17 @@ export default function AddUserDrawer({ open, onClose }) {
       role: ROLES.CASHIER,
     },
     validationSchema: schema,
-    onSubmit: () => {
-      onClose()
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      try {
+        const result = await createUser.mutateAsync(values)
+        appToast.success(result.message || 'تم إنشاء المستخدم بنجاح')
+        resetForm()
+        onClose()
+      } catch (error) {
+        appToast.error(error?.message || 'تعذر إنشاء المستخدم')
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -57,6 +69,8 @@ export default function AddUserDrawer({ open, onClose }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  const isBusy = formik.isSubmitting || createUser.isLoading
 
   const fieldError = (name) =>
     formik.touched[name] && formik.errors[name] ? (
@@ -181,10 +195,10 @@ export default function AddUserDrawer({ open, onClose }) {
 
         <button
           type="submit"
-          disabled={formik.isSubmitting}
-          className="w-full rounded-lg bg-[#1e2a38] py-2.5 text-sm font-semibold text-white transition hover:bg-[#2a3a4d] disabled:opacity-60"
+          disabled={isBusy}
+          className="w-full rounded-lg bg-[#1e2a38] py-2.5 text-sm font-semibold text-white transition hover:bg-[#2a3a4d] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          حفظ المستخدم
+          {isBusy ? 'جاري الحفظ...' : 'حفظ المستخدم'}
         </button>
       </form>
     </LeftDrawer>
