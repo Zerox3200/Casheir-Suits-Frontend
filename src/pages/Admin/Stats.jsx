@@ -111,13 +111,22 @@ export default function Stats() {
             لوحة التحكم · المخزون · المبيعات
           </p>
         </div>
-        <Link
-          to="/activity-log"
-          className="inline-flex items-center gap-2 rounded-lg border border-[#1e2a38]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#1e2a38] transition hover:bg-[#f7f5f2]"
-        >
-          <FiActivity size={16} />
-          سجل النشاط
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/profits"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1e2a38] px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2a3a4d]"
+          >
+            <FiTrendingUp size={16} />
+            الأرباح اليومية
+          </Link>
+          <Link
+            to="/activity-log"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1e2a38]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#1e2a38] transition hover:bg-[#f7f5f2]"
+          >
+            <FiActivity size={16} />
+            سجل النشاط
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -300,12 +309,13 @@ export default function Stats() {
         <span className="text-xs font-semibold text-[#9e7e3a]">فتح ←</span>
       </Link>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {[
           { to: '/products', label: 'إدارة المنتجات' },
           { to: '/orders', label: 'نقطة البيع / الأوردرات' },
           { to: '/invoices', label: 'إدارة الفواتير' },
           { to: '/stock', label: 'المخزن' },
+          { to: '/profits', label: 'الأرباح اليومية' },
         ].map((link) => (
           <Link
             key={link.to}

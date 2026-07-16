@@ -7,6 +7,7 @@ import { loginService } from '../../services/auth.services'
 import { getAuthToken, getAuthUser } from '../../helpers/cookies'
 import { getHomePathForRole } from '../../helpers/roles'
 import { appToast } from '../../helpers/toast'
+import PwaInstallButton from '../../components/pwa/PwaInstallButton'
 
 const loginSchema = Yup.object({
   email: Yup.string()
@@ -161,6 +162,8 @@ export default function Login() {
           >
             {formik.isSubmitting ? 'جاري الدخول...' : 'دخول'}
           </button>
+
+          <PwaInstallButton variant="banner" className="mt-4" />
         </form>
       </div>
     </div>

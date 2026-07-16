@@ -13,7 +13,7 @@ const baseStyle = {
 
 const toastOptions = {
   duration: 3500,
-  position: 'bottom-left',
+  position: 'bottom-center',
 }
 
 /** Suits Shop branded toast helpers */
@@ -66,7 +66,7 @@ export const appToast = {
 
   loading(message) {
     return toast.loading(message, {
-      position: 'bottom-left',
+      position: 'bottom-center',
       style: {
         ...baseStyle,
         background: '#ffffff',
@@ -83,11 +83,11 @@ export const appToast = {
 
 /** Shared props for the global <Toaster /> */
 export const suitsToasterProps = {
-  position: 'bottom-left',
+  position: 'bottom-center',
   reverseOrder: false,
   gutter: 10,
   containerStyle: {
-    top: 16,
+    bottom: 16,
     zIndex: 9999,
   },
   toastOptions: {

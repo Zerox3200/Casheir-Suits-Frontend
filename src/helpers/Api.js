@@ -8,8 +8,17 @@ export const createIdempotencyKey = () => {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
-export const BaseUrl =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:5200'
+export const BaseUrl = (() => {
+  const raw = String(import.meta.env.VITE_API_URL || '')
+    .trim()
+    .replace(/\/$/, '')
+
+  if (!raw) return 'http://localhost:5200'
+
+  // Ensure absolute URL in production (bare host becomes relative and breaks)
+  if (/^https?:\/\//i.test(raw)) return raw
+  return `https://${raw}`
+})()
 
 /** Resolve upload paths from the API into absolute URLs. */
 export function resolveMediaUrl(path) {

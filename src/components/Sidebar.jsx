@@ -6,6 +6,7 @@ import {
   FiShoppingBag,
   FiUsers,
   FiBarChart2,
+  FiTrendingUp,
   FiPackage,
   FiMenu,
   FiX,
@@ -17,6 +18,7 @@ import { resolveMediaUrl } from '../helpers/Api'
 import { getAuthUser } from '../helpers/cookies'
 import { isAdmin } from '../helpers/roles'
 import { DEFAULT_SETTINGS, useSettings } from '../hooks/useSettings'
+import PwaInstallButton from './pwa/PwaInstallButton'
 
 const navLinks = [
   { to: '/products', label: 'إدارة المنتجات', icon: FiBox },
@@ -24,6 +26,12 @@ const navLinks = [
   { to: '/invoices', label: 'إدارة الفواتير', icon: FiFileText },
   { to: '/stock', label: 'المخزن', icon: FiPackage },
   { to: '/users', label: 'إدارة المستخدمين', icon: FiUsers, adminOnly: true },
+  {
+    to: '/profits',
+    label: 'الأرباح اليومية',
+    icon: FiTrendingUp,
+    adminOnly: true,
+  },
   {
     to: '/stats',
     label: 'إحصائيات السيستم والجرد',
@@ -81,7 +89,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-[#1e2a38]/10 bg-white/90 px-4 backdrop-blur-sm lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-[#1e2a38]/10 bg-white/90 px-3 backdrop-blur-sm lg:hidden">
         <div className="flex min-w-0 items-center gap-2">
           {logoUrl ? (
             <img
@@ -92,14 +100,17 @@ export default function Sidebar() {
           ) : null}
           <p className="truncate text-sm font-bold text-[#1e2a38]">{storeName}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="rounded-lg border border-[#1e2a38]/10 p-2 text-[#1e2a38] hover:bg-[#f7f5f2]"
-          aria-label="فتح القائمة"
-        >
-          <FiMenu size={20} />
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <PwaInstallButton variant="icon" />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="rounded-lg border border-[#1e2a38]/10 p-2 text-[#1e2a38] hover:bg-[#f7f5f2]"
+            aria-label="فتح القائمة"
+          >
+            <FiMenu size={20} />
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -155,6 +166,7 @@ export default function Sidebar() {
           <p className="text-xs text-[#8a939e]">
             {admin ? 'لوحة تحكم المسؤول' : 'لوحة الكاشير'}
           </p>
+          <PwaInstallButton variant="sidebar" />
           <button
             type="button"
             onClick={handleLogout}

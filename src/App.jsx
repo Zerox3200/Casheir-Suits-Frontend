@@ -12,6 +12,8 @@ import Orders from './pages/Admin/Orders'
 import Stock from './pages/Admin/Stock'
 import Users from './pages/Admin/Users'
 import Stats from './pages/Admin/Stats'
+import Profits from './pages/Admin/Profits'
+import ProfitDayDetails from './pages/Admin/ProfitDayDetails'
 import ActivityLog from './pages/Admin/ActivityLog'
 import Settings from './pages/Admin/Settings'
 import RequireAuth from './Protectors/RequireAuth'
@@ -38,6 +40,8 @@ function App() {
               children: [
                 { path: 'users', element: <Users /> },
                 { path: 'stats', element: <Stats /> },
+                { path: 'profits', element: <Profits /> },
+                { path: 'profits/:date', element: <ProfitDayDetails /> },
                 { path: 'activity-log', element: <ActivityLog /> },
                 { path: 'settings', element: <Settings /> },
               ],

@@ -8,6 +8,7 @@ import {
   FiActivity,
   FiX,
   FiChevronLeft,
+  FiSearch,
 } from 'react-icons/fi'
 import { STOCK_MOVEMENT_TYPE } from '../../constants/stock'
 import { useStock, useStockMovements } from '../../hooks/useStock'
@@ -59,6 +60,8 @@ const levelBadgeClass = {
 export default function Stock() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [stockFilter, setStockFilter] = useState(STOCK_FILTER.ALL)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [movementsSearch, setMovementsSearch] = useState('')
   const [alertsDismissed, setAlertsDismissed] = useState(false)
   const [adjustItem, setAdjustItem] = useState(null)
   const scanProduct = useScanProduct()
@@ -115,9 +118,30 @@ export default function Stock() {
   const showAlertsBanner = alertTotal > 0 && !alertsDismissed
 
   const filteredStock = useMemo(() => {
-    if (stockFilter === STOCK_FILTER.ALL) return stockItems
-    return stockItems.filter((item) => getStockLevel(item) === stockFilter)
-  }, [stockItems, stockFilter])
+    const q = searchQuery.trim().toLowerCase()
+    return stockItems.filter((item) => {
+      if (stockFilter !== STOCK_FILTER.ALL && getStockLevel(item) !== stockFilter) {
+        return false
+      }
+      if (!q) return true
+      const p = item.productId
+      const name = String(p?.name || '').toLowerCase()
+      const sku = String(p?.sku || '').toLowerCase()
+      const barcode = String(p?.barcode || '').toLowerCase()
+      return name.includes(q) || sku.includes(q) || barcode.includes(q)
+    })
+  }, [stockItems, stockFilter, searchQuery])
+
+  const filteredMovements = useMemo(() => {
+    const q = movementsSearch.trim().toLowerCase()
+    if (!q) return movements
+    return movements.filter((m) => {
+      const p = m.productId
+      const name = String(p?.name || '').toLowerCase()
+      const sku = String(p?.sku || '').toLowerCase()
+      return name.includes(q) || sku.includes(q)
+    })
+  }, [movements, movementsSearch])
 
   const handleBarcodeScan = async (code) => {
     try {
@@ -498,37 +522,65 @@ export default function Stock() {
       )}
 
       <section className="overflow-hidden rounded-2xl border border-[#1e2a38]/8 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#1e2a38]/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center justify-between gap-3 sm:justify-start">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-[#1e2a38]">
-              <FiPackage size={16} />
-              أرصدة المخزن
-            </h2>
-            <span className="text-xs text-[#8a939e]">
-              {filteredStock.length} صنف
-            </span>
-            {stockFilter !== STOCK_FILTER.ALL && (
+        <div className="flex flex-col gap-3 border-b border-[#1e2a38]/8 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-[#1e2a38]">
+                <FiPackage size={16} />
+                أرصدة المخزن
+              </h2>
+              <span className="text-xs text-[#8a939e]">
+                {filteredStock.length} صنف
+              </span>
+              {stockFilter !== STOCK_FILTER.ALL && (
+                <button
+                  type="button"
+                  onClick={() => setStockFilter(STOCK_FILTER.ALL)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e2a38]/15 bg-[#f7f5f2] px-2.5 py-1 text-xs font-semibold text-[#1e2a38] transition hover:bg-[#ebe6df]"
+                >
+                  <FiX size={13} />
+                  {stockFilter === STOCK_FILTER.LOW
+                    ? 'إلغاء عرض المنخفض'
+                    : stockFilter === STOCK_FILTER.OUT
+                      ? 'إلغاء عرض النافد'
+                      : 'إلغاء الفلتر'}
+                </button>
+              )}
+            </div>
+            <div className="w-full sm:max-w-md">
+              <BarcodeScanner
+                onScan={handleBarcodeScan}
+                disabled={scanProduct.isLoading}
+                placeholder="امسح الباركود لفتح تعديل الكمية..."
+                allowSimulate={false}
+              />
+            </div>
+          </div>
+
+          <div className="relative w-full sm:max-w-md sm:ms-auto">
+            <FiSearch
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8a939e]"
+              size={16}
+            />
+            <input
+              id="stock-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="بحث بالاسم أو SKU..."
+              className="w-full rounded-lg border border-[#1e2a38]/10 bg-[#f7f5f2] py-2.5 pr-10 pl-9 text-sm text-[#1e2a38] outline-none transition placeholder:text-[#a0a8b0] focus:border-[#9e7e3a]/60 focus:ring-1 focus:ring-[#9e7e3a]/25"
+              autoComplete="off"
+            />
+            {searchQuery ? (
               <button
                 type="button"
-                onClick={() => setStockFilter(STOCK_FILTER.ALL)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e2a38]/15 bg-[#f7f5f2] px-2.5 py-1 text-xs font-semibold text-[#1e2a38] transition hover:bg-[#ebe6df]"
+                onClick={() => setSearchQuery('')}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#8a939e] hover:text-[#1e2a38]"
+                aria-label="مسح البحث"
               >
-                <FiX size={13} />
-                {stockFilter === STOCK_FILTER.LOW
-                  ? 'إلغاء عرض المنخفض'
-                  : stockFilter === STOCK_FILTER.OUT
-                    ? 'إلغاء عرض النافد'
-                    : 'إلغاء الفلتر'}
+                <FiX size={14} />
               </button>
-            )}
-          </div>
-          <div className="w-full sm:max-w-md">
-            <BarcodeScanner
-              onScan={handleBarcodeScan}
-              disabled={scanProduct.isLoading}
-              placeholder="امسح الباركود لفتح تعديل الكمية..."
-              allowSimulate={false}
-            />
+            ) : null}
           </div>
         </div>
 
@@ -553,7 +605,9 @@ export default function Stock() {
           <div className="px-4 py-12 text-center text-sm text-[#5c6570]">
             {stockItems.length === 0
               ? 'لا توجد أرصدة مخزن'
-              : 'لا توجد أصناف مطابقة لهذا الفلتر'}
+              : searchQuery.trim()
+                ? 'لا توجد نتائج مطابقة للبحث'
+                : 'لا توجد أصناف مطابقة لهذا الفلتر'}
           </div>
         ) : (
           <ScrollableTable>
@@ -654,29 +708,63 @@ export default function Stock() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-[#1e2a38]/8 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#1e2a38]/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-[#1e2a38]">
-            <FiActivity size={16} />
-            حركات المخزون
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: 'all', label: 'الكل' },
-              { key: STOCK_MOVEMENT_TYPE.IN, label: 'دخول' },
-              { key: STOCK_MOVEMENT_TYPE.OUT, label: 'خروج' },
-            ].map((f) => (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => setTypeFilter(f.key)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${typeFilter === f.key
-                    ? 'bg-[#1e2a38] text-white'
-                    : 'bg-[#f7f5f2] text-[#5c6570] hover:bg-[#ebe6df]'
+        <div className="flex flex-col gap-3 border-b border-[#1e2a38]/8 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-[#1e2a38]">
+                <FiActivity size={16} />
+                حركات المخزون
+              </h2>
+              <span className="text-xs text-[#8a939e]">
+                {filteredMovements.length} حركة
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: 'all', label: 'الكل' },
+                { key: STOCK_MOVEMENT_TYPE.IN, label: 'دخول' },
+                { key: STOCK_MOVEMENT_TYPE.OUT, label: 'خروج' },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setTypeFilter(f.key)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    typeFilter === f.key
+                      ? 'bg-[#1e2a38] text-white'
+                      : 'bg-[#f7f5f2] text-[#5c6570] hover:bg-[#ebe6df]'
                   }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative w-full sm:max-w-md sm:ms-auto">
+            <FiSearch
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8a939e]"
+              size={16}
+            />
+            <input
+              id="movements-search"
+              type="search"
+              value={movementsSearch}
+              onChange={(e) => setMovementsSearch(e.target.value)}
+              placeholder="بحث في الحركات بالاسم أو SKU..."
+              className="w-full rounded-lg border border-[#1e2a38]/10 bg-[#f7f5f2] py-2.5 pr-10 pl-9 text-sm text-[#1e2a38] outline-none transition placeholder:text-[#a0a8b0] focus:border-[#9e7e3a]/60 focus:ring-1 focus:ring-[#9e7e3a]/25"
+              autoComplete="off"
+            />
+            {movementsSearch ? (
+              <button
+                type="button"
+                onClick={() => setMovementsSearch('')}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#8a939e] hover:text-[#1e2a38]"
+                aria-label="مسح البحث"
               >
-                {f.label}
+                <FiX size={14} />
               </button>
-            ))}
+            ) : null}
           </div>
         </div>
 
@@ -697,9 +785,13 @@ export default function Stock() {
               إعادة المحاولة
             </button>
           </div>
-        ) : movements.length === 0 ? (
+        ) : filteredMovements.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-[#5c6570]">
-            لا توجد حركات مخزون
+            {movements.length === 0
+              ? 'لا توجد حركات مخزون'
+              : movementsSearch.trim()
+                ? 'لا توجد حركات مطابقة للبحث'
+                : 'لا توجد حركات لهذا الفلتر'}
           </div>
         ) : (
           <ScrollableTable>
@@ -716,7 +808,7 @@ export default function Stock() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1e2a38]/6">
-                {movements.map((m) => (
+                {filteredMovements.map((m) => (
                   <tr key={m._id} className="hover:bg-[#f7f5f2]/70">
                     <td className="px-4 py-3">
                       <p className="font-medium text-[#1e2a38]">
@@ -731,10 +823,11 @@ export default function Stock() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${m.type === STOCK_MOVEMENT_TYPE.IN
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                          m.type === STOCK_MOVEMENT_TYPE.IN
                             ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-red-50 text-red-600'
-                          }`}
+                        }`}
                       >
                         {m.type}
                       </span>

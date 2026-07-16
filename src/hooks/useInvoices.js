@@ -12,14 +12,18 @@ import { PRODUCTS_QUERY_KEY } from './useProducts'
 
 export const INVOICES_QUERY_KEY = ['invoices']
 
-export function useInvoices(params = { limit: 20 }) {
-  return useQuery([...INVOICES_QUERY_KEY, params], async () => {
-    const result = assertSuccess(await listInvoicesService(params))
-    return {
-      items: result.data?.items ?? [],
-      pagination: result.data?.pagination ?? null,
-    }
-  })
+export function useInvoices(params = { limit: 20 }, options = {}) {
+  return useQuery(
+    [...INVOICES_QUERY_KEY, params],
+    async () => {
+      const result = assertSuccess(await listInvoicesService(params))
+      return {
+        items: result.data?.items ?? [],
+        pagination: result.data?.pagination ?? null,
+      }
+    },
+    options
+  )
 }
 
 export function useInvoice(id) {
