@@ -222,7 +222,12 @@ export default function InvoiceDetails() {
               <span>{formatMoney(invoice.subTotal)}</span>
             </div>
             <div className="flex justify-between text-white/70">
-              <span>الخصم</span>
+              <span>
+                الخصم
+                {Number(invoice.discountPercent) > 0
+                  ? ` (${invoice.discountPercent}%)`
+                  : ''}
+              </span>
               <span>- {formatMoney(invoice.discount)}</span>
             </div>
             <div className="flex justify-between text-white/70">

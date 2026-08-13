@@ -11,7 +11,12 @@ import {
   FiSearch,
   FiPrinter,
 } from 'react-icons/fi'
-import { PAYMENT_METHODS, INVOICE_STATUS } from '../../constants/invoices'
+import {
+  PAYMENT_METHODS,
+  INVOICE_STATUS,
+  clampDiscountPercent,
+  discountAmountFromPercent,
+} from '../../constants/invoices'
 import { useProducts, useScanProduct } from '../../hooks/useProducts'
 import { useStock } from '../../hooks/useStock'
 import BarcodeScanner from '../../components/barcode/BarcodeScanner'
@@ -243,7 +248,9 @@ export default function Orders() {
   }
 
   const subTotal = cart.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
-  const total = Math.max(0, subTotal - Number(discount || 0) + Number(tax || 0))
+  const discountPercent = clampDiscountPercent(discount)
+  const discountAmount = discountAmountFromPercent(subTotal, discountPercent)
+  const total = Math.max(0, subTotal - discountAmount + Number(tax || 0))
 
   const submitInvoice = async ({ print = false } = {}) => {
     if (!cart.length || submitting) return
@@ -257,7 +264,7 @@ export default function Orders() {
           productId: i.productId,
           quantity: i.quantity,
         })),
-        discount: Number(discount) || 0,
+        discount: discountPercent,
         tax: Number(tax) || 0,
         paymentMethod,
         notes: notes.trim(),
@@ -549,15 +556,20 @@ export default function Orders() {
                   htmlFor="order-discount"
                   className="mb-1 block text-xs font-medium text-[#3d4654]"
                 >
-                  الخصم
+                  الخصم (%)
                 </label>
                 <input
                   id="order-discount"
                   type="number"
                   min="0"
+                  max="100"
+                  step="0.01"
                   placeholder="0"
                   value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
+                  onBlur={() =>
+                    setDiscount(clampDiscountPercent(discount))
+                  }
                   className="w-full rounded-lg border border-[#1e2a38]/10 bg-[#f7f5f2] px-2.5 py-2 text-xs outline-none focus:border-[#9e7e3a]/50"
                 />
               </div>
@@ -621,6 +633,18 @@ export default function Orders() {
                 <span>المجموع الفرعي</span>
                 <span>{formatMoney(subTotal)}</span>
               </div>
+              {discountAmount > 0 ? (
+                <div className="mt-1 flex justify-between text-xs text-white/70">
+                  <span>الخصم ({discountPercent}%)</span>
+                  <span>- {formatMoney(discountAmount)}</span>
+                </div>
+              ) : null}
+              {Number(tax || 0) > 0 ? (
+                <div className="mt-1 flex justify-between text-xs text-white/70">
+                  <span>الضريبة</span>
+                  <span>+ {formatMoney(Number(tax) || 0)}</span>
+                </div>
+              ) : null}
               <div className="mt-2 flex justify-between text-base font-bold">
                 <span>الإجمالي</span>
                 <span>{formatMoney(total)}</span>
