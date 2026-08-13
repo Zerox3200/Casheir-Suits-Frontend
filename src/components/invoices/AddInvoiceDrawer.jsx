@@ -3,7 +3,11 @@ import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { FiPlus, FiTrash2 } from 'react-icons/fi'
 import LeftDrawer from '../products/LeftDrawer'
-import { PAYMENT_METHODS } from '../../constants/invoices'
+import {
+  PAYMENT_METHODS,
+  clampDiscountPercent,
+  discountAmountFromPercent,
+} from '../../constants/invoices'
 import { useCreateInvoice } from '../../hooks/useInvoices'
 import { useFormatMoney, useSettings } from '../../hooks/useSettings'
 import { appToast } from '../../helpers/toast'
@@ -26,7 +30,8 @@ const schema = Yup.object({
     .required('عناصر الفاتورة مطلوبة'),
   discount: Yup.number()
     .typeError('الخصم غير صالح')
-    .min(0, 'الخصم لا يمكن أن يكون سالبًا'),
+    .min(0, 'الخصم لا يمكن أن يكون سالبًا')
+    .max(100, 'يجب أن يكون الخصم بين 0 و 100 بالمئة'),
   tax: Yup.number()
     .typeError('الضريبة غير صالحة')
     .min(0, 'الضريبة لا يمكن أن تكون سالبة'),
@@ -68,7 +73,7 @@ export default function AddInvoiceDrawer({ open, onClose, products = [] }) {
             productId: item.productId,
             quantity: Number(item.quantity),
           })),
-          discount: Number(values.discount) || 0,
+          discount: clampDiscountPercent(values.discount),
           tax: Number(values.tax) || 0,
           paymentMethod: values.paymentMethod,
           notes: values.notes.trim(),
@@ -117,9 +122,10 @@ export default function AddInvoiceDrawer({ open, onClose, products = [] }) {
     return sum + product.sellingPrice * Number(item.quantity || 0)
   }, 0)
 
-  const discount = Number(formik.values.discount) || 0
+  const discountPercent = Number(formik.values.discount) || 0
+  const discountAmount = discountAmountFromPercent(subTotal, discountPercent)
   const tax = Number(formik.values.tax) || 0
-  const total = Math.max(0, subTotal - discount + tax)
+  const total = Math.max(0, subTotal - discountAmount + tax)
 
   const getItemError = (index, field) => {
     const touched = formik.touched.items?.[index]?.[field]
@@ -273,12 +279,15 @@ export default function AddInvoiceDrawer({ open, onClose, products = [] }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass} htmlFor="discount">
-              الخصم
+              الخصم (%)
             </label>
             <input
               id="discount"
               type="number"
               min="0"
+              max="100"
+              step="0.01"
+              placeholder="0"
               className={inputClass}
               {...formik.getFieldProps('discount')}
             />
@@ -332,8 +341,11 @@ export default function AddInvoiceDrawer({ open, onClose, products = [] }) {
             <span>{formatMoney(subTotal)}</span>
           </div>
           <div className="mt-1 flex justify-between text-sm text-white/70">
-            <span>الخصم</span>
-            <span>- {formatMoney(discount)}</span>
+            <span>
+              الخصم
+              {discountPercent > 0 ? ` (${discountPercent}%)` : ''}
+            </span>
+            <span>- {formatMoney(discountAmount)}</span>
           </div>
           <div className="mt-1 flex justify-between text-sm text-white/70">
             <span>الضريبة</span>

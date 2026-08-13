@@ -22,7 +22,12 @@ export default function ReceiptTotals({ invoice, currency = 'EGP' }) {
       </div>
       {Number(invoice?.discount) > 0 ? (
         <div className="receipt-row">
-          <span className="receipt-row-label">الخصم</span>
+          <span className="receipt-row-label">
+            الخصم
+            {Number(invoice?.discountPercent) > 0
+              ? ` (${invoice.discountPercent}%)`
+              : ''}
+          </span>
           <span className="receipt-row-value">
             {formatReceiptMoney(invoice.discount, currency)}
           </span>
