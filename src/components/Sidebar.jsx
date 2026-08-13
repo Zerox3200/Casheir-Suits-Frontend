@@ -21,10 +21,10 @@ import { DEFAULT_SETTINGS, useSettings } from '../hooks/useSettings'
 import PwaInstallButton from './pwa/PwaInstallButton'
 
 const navLinks = [
-  { to: '/products', label: 'إدارة المنتجات', icon: FiBox },
+  { to: '/products', label: 'إدارة المنتجات', icon: FiBox, adminOnly: true },
   { to: '/orders', label: 'إدارة الأوردرات', icon: FiShoppingBag },
-  { to: '/invoices', label: 'إدارة الفواتير', icon: FiFileText },
-  { to: '/stock', label: 'المخزن', icon: FiPackage },
+  { to: '/invoices', label: 'إدارة الفواتير', icon: FiFileText, adminOnly: true },
+  { to: '/stock', label: 'المخزن', icon: FiPackage, adminOnly: true },
   { to: '/users', label: 'إدارة المستخدمين', icon: FiUsers, adminOnly: true },
   {
     to: '/profits',

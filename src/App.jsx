@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import './App.scss'
 import MainLayOut from './pages/MainLayOut'
 import Login from './pages/Auth/Login'
@@ -18,6 +18,13 @@ import ActivityLog from './pages/Admin/ActivityLog'
 import Settings from './pages/Admin/Settings'
 import RequireAuth from './Protectors/RequireAuth'
 import RequireAdmin from './Protectors/RequireAdmin'
+import { getAuthUser } from './helpers/cookies'
+import { getHomePathForRole } from './helpers/roles'
+
+/** PWA start_url is `/` — send users to their role home instead of a blank Outlet. */
+function HomeRedirect() {
+  return <Navigate to={getHomePathForRole(getAuthUser()?.role)} replace />
+}
 
 function App() {
   const routes = createBrowserRouter([
@@ -28,16 +35,18 @@ function App() {
         {
           element: <MainLayOut />,
           children: [
-            { path: 'products', element: <Products /> },
-            { path: 'products/new', element: <CreateProduct /> },
-            { path: 'products/:id', element: <ProductDetails /> },
+            { index: true, element: <HomeRedirect /> },
             { path: 'orders', element: <Orders /> },
-            { path: 'invoices', element: <Invoices /> },
+            // Cashiers need invoice detail + receipt after completing a sale
             { path: 'invoices/:id', element: <InvoiceDetails /> },
-            { path: 'stock', element: <Stock /> },
             {
               element: <RequireAdmin />,
               children: [
+                { path: 'products', element: <Products /> },
+                { path: 'products/new', element: <CreateProduct /> },
+                { path: 'products/:id', element: <ProductDetails /> },
+                { path: 'invoices', element: <Invoices /> },
+                { path: 'stock', element: <Stock /> },
                 { path: 'users', element: <Users /> },
                 { path: 'stats', element: <Stats /> },
                 { path: 'profits', element: <Profits /> },

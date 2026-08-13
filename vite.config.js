@@ -42,6 +42,13 @@ export default defineConfig({
       workbox: {
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Never cache API responses in the installed PWA
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/apicashier\.aztech\.lt\/.*/i,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
       devOptions: {
         enabled: true,

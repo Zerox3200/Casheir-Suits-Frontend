@@ -26,6 +26,7 @@ import { playScanError, playScanSuccess } from '../../helpers/scanSounds'
 import { appToast } from '../../helpers/toast'
 import ScrollableTable, { stickyTheadClass } from '../../components/ScrollableTable'
 import { useQueryClient } from 'react-query'
+import { isAdmin } from '../../helpers/roles'
 
 const formatDate = (value) => {
   if (!value) return '—'
@@ -40,6 +41,7 @@ export default function Orders() {
   const queryClient = useQueryClient()
   const { formatMoney } = useFormatMoney()
   const { data: settings } = useSettings()
+  const admin = isAdmin()
   const [cart, setCart] = useState([])
   const [productSearch, setProductSearch] = useState('')
   const [invoiceSearch, setInvoiceSearch] = useState('')
@@ -658,12 +660,14 @@ export default function Orders() {
               <FiFileText size={16} />
               آخر الفواتير
             </h2>
-            <Link
-              to="/invoices"
-              className="text-xs font-semibold text-[#9e7e3a] hover:underline"
-            >
-              عرض الكل
-            </Link>
+            {admin ? (
+              <Link
+                to="/invoices"
+                className="text-xs font-semibold text-[#9e7e3a] hover:underline"
+              >
+                عرض الكل
+              </Link>
+            ) : null}
           </div>
           <div className="relative w-full sm:max-w-xs">
             <FiSearch

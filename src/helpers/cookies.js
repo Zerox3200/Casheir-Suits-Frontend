@@ -13,7 +13,11 @@ function getCookie(name) {
 
 function setCookie(name, value, maxAgeSec) {
   if (typeof document === 'undefined') return
-  const secure = import.meta.env.PROD ? '; Secure' : ''
+  // Only mark Secure on HTTPS — otherwise cookies never save (HTTP preview / some hosts)
+  const secure =
+    typeof window !== 'undefined' && window.location.protocol === 'https:'
+      ? '; Secure'
+      : ''
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSec}; SameSite=Lax${secure}`
 }
 
